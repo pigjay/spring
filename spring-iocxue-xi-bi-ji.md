@@ -282,6 +282,70 @@ public interface BeanFactory {
 }
 ```
 
+* **AbstractBeanFactory BeanFactory** 的一种抽象类实现，规范了 **IoC** 容器的基本结构，但是把生成 **Bean** 的具体实现方式留给子类实现。**IoC** 容器的结构：**AbstractBeanFactory** 维护一个 **beanDefinitionMap** 哈希表用于保存类的定义信息**（BeanDefinition）**。获取 **Bean** 时，如果 **Bean** 已经存在于容器中，则返回之，否则则调用 **doCreateBean** 方法装配一个 **Bean**。（所谓存在于容器中，是指容器可以通过 **beanDefinitionMap** 获取 **BeanDefinition** 进而通过其 **getBean()** 方法获取 **Bean**。）
+
+```
+
+package us.codecraft.tinyioc.factory;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import us.codecraft.tinyioc.BeanDefinition;
+/**
+ * BeanFactory 的一种抽象类实现，规范了 IoC 容器的基本结构，但是把生成 Bean 的具体实现方式留给子类实现
+ * @author zhujie
+ *
+ */
+public abstract class AbstractBeanFactory implements BeanFactory{
+
+	//存放BeanDefinition信息
+	private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
+
+	//存放BeanDefinition的名称
+	private final List<String> beanDefinitionNames = new ArrayList<String>();
+	
+	
+	@Override
+	public Object getBean(String name) throws Exception {
+		BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+		if(beanDefinition == null) {
+			throw new IllegalArgumentException("No bean named "+name+" is defined");
+		}
+		Object bean = beanDefinition.getBean();
+		if(bean == null) {
+			bean = doCreateBean(beanDefinition);
+		}
+		return bean;
+	}
+
+	@Override
+	public void registerBeanDefinition(String name, BeanDefinition beanDefinition)throws Exception {
+    
+		beanDefinitionMap.put(name, beanDefinition);
+		beanDefinitionNames.add(name);
+	}
+
+	public void preInstantiateSingletons()throws Exception{
+		for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
+			String beanName = (String) it.next();
+			getBean(beanName);
+		}
+	}
+	
+	/**
+	 * 初始化bean
+	 * @param beanDefinition
+	 * @return
+	 */
+	protected abstract Object doCreateBean(BeanDefinition beanDefinition) throws Exception;
+}
+
+
+```
 
 
 
