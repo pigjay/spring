@@ -2,7 +2,7 @@
 
 ### 1.ioc容器的实现
 ##### 1.BeanDefinitioin
-* 以 BeanDefinition 类为核心发散出的几个类，都是用于解决 Bean 的具体定义问题，包括 Bean 的名字是什么、它的类型是什么，它的属性赋予了哪些值或者引用，也就是 如何在 IoC 容器中定义一个 Bean，使得 IoC 容器可以根据这个定义来生成实例 的问题。
+* 以 **BeanDefinition** 类为核心发散出的几个类，都是用于解决 **Bean** 的具体定义问题，包括 **Bean** 的名字是什么、它的类型是什么，它的属性赋予了哪些值或者引用，也就是 如何在 **IoC** 容器中定义一个 **Bean**，使得 **IoC** 容器可以根据这个定义来生成实例 的问题。
 
 ```
 
@@ -38,7 +38,10 @@ public class BeanDefinition {
 	public BeanDefinition() {
 		
 	}
+	
+	#####
 	set/get方法...
+	#####
 	
 	//beanClassName的set方法，同时对beanClass属性进行初始化
 	public void setBeanClassName(String beanClassName) {
@@ -57,8 +60,204 @@ public class BeanDefinition {
 
 ```
 
-##### 1.BeanFactory
-* 接口，标识一个 IoC 容器。通过 getBean(String) 方法来 获取一个对象
+
+* **BeanDefinitionReader** 解析 **BeanDefinition** 的接口。通过 **loadBeanDefinitions(String)** 来从一个地址加载类定义。
+
+
+```
+
+package us.codecraft.tinyioc;
+/**
+ * 从配置中读取BeanDefinitionReader
+ * @author zhujie
+ *
+ */
+public interface BeanDefinitionReader {
+
+	//从一个地址加载类定义
+	void loadBeanDefinitions(String location)throws Exception;
+}
+
+
+```
+
+* **AbstractBeanDefinitionReader** 实现 **BeanDefinitionReader** 接口的抽象类（未具体实现 **loadBeanDefinitions**，而是规范了 **BeanDefinitionReader** 的基本结构）。内置一个 **HashMap rigistry**，用于保存 **String - beanDefinition** 的键值对。内置一个 **ResourceLoader resourceLoader**，用于保存类加载器。用意在于，使用时，只需要向其 **loadBeanDefinitions()** 传入一个资源地址，就可以自动调用其类加载器，并把解析到的 **BeanDefinition** 保存到 **registry** 中去。
+
+```
+
+package us.codecraft.tinyioc;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import us.codecraft.tinyioc.io.ResourceLoader;
+
+/**
+ * 从配置中读取BeanDefinitionReader
+ * @author zhujie
+ *
+ */
+public abstract class AbstractBeanDefinitionReader implements BeanDefinitionReader{
+
+    //存放beanDefinition的键值对
+	private Map<String,BeanDefinition> registry;
+	
+	//资源加载器
+	private ResourceLoader resourceLoader;
+	
+	protected AbstractBeanDefinitionReader(ResourceLoader resourceLoader) {
+		this.registry = new HashMap<String, BeanDefinition>();
+		this.resourceLoader = resourceLoader;
+	}
+
+	public Map<String, BeanDefinition> getRegistry() {
+		return registry;
+	}
+
+	public ResourceLoader getResourceLoader() {
+		return resourceLoader;
+	}
+	
+	
+}
+
+
+```
+
+*  **XmlBeanDefinitionReader** 具体实现了 loadBeanDefinitions() 方法，从 XML 文件中读取类定义。
+
+```
+
+package us.codecraft.tinyioc.xml;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import us.codecraft.tinyioc.AbstractBeanDefinitionReader;
+import us.codecraft.tinyioc.BeanDefinition;
+import us.codecraft.tinyioc.BeanReference;
+import us.codecraft.tinyioc.PropertyValue;
+import us.codecraft.tinyioc.io.ResourceLoader;
+/**
+ * 用于从xml文件中读取配置信息的类
+ * @author zhujie
+ *
+ */
+public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
+
+	//初始化 资源加载器
+	public XmlBeanDefinitionReader(ResourceLoader resourceLoader) {
+		super(resourceLoader);
+	}
+
+	//读取xml配置文件信息
+	@Override
+	public void loadBeanDefinitions(String location) throws Exception {
+		//获取资源输入流
+		InputStream inputStream = getResourceLoader().getResource(location).getInputStream();
+		//读取配置信息
+		doLoadBeanDefinitions(inputStream);
+	}
+	
+	/**
+	 * 读取配置信息
+	 * @param inputStream
+	 * @throws Exception
+	 */
+	protected void doLoadBeanDefinitions(InputStream inputStream)throws Exception{
+		//初始化DocumentBuilderFactory
+		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		//获取DocumentBuilder
+		DocumentBuilder docBuilder = factory.newDocumentBuilder();
+		//从输入流创建Document
+		Document doc = docBuilder.parse(inputStream);
+		//解析bean
+		registerBeanDefinitions(doc);
+		//关闭输入流
+		inputStream.close();
+	}
+	
+	/**
+	 * 根据Document注册BeanDefinition
+	 * @param doc
+	 */
+	public void registerBeanDefinitions(Document doc) {
+		Element root = doc.getDocumentElement();
+		
+		parseBeanDefinitions(root);
+		
+	}
+
+	/**
+	 * 解析Document
+	 * @param root
+	 */
+	protected void parseBeanDefinitions(Element root) {
+		NodeList nl = root.getChildNodes();
+		for(int i = 0; i < nl.getLength(); i++) {
+			Node node = nl.item(i);
+			if(node instanceof Element) {
+				Element ele = (Element) node;
+				processBeanDefinition(ele);
+			}
+		}
+	}
+	
+	/**
+	 * 生成BeanDefinition
+	 * @param ele
+	 */
+	protected void processBeanDefinition(Element ele) {
+		String name = ele.getAttribute("name");
+		String className = ele.getAttribute("class");
+		BeanDefinition beanDefinition = new BeanDefinition();
+		processProperty(ele, beanDefinition);
+		beanDefinition.setBeanClassName(className);
+		getRegistry().put(name, beanDefinition);
+	}
+	
+	/**
+	 * 读取bean属性
+	 * @param ele
+	 * @param beanDefinition
+	 */
+	private void processProperty(Element ele,BeanDefinition beanDefinition) {
+		NodeList propertyNode = ele.getElementsByTagName("property");
+		for(int i = 0; i < propertyNode.getLength(); i++) {
+			Node node = propertyNode.item(i);
+			if(node instanceof Element) {
+				Element propertyEle = (Element) node;
+				String name = propertyEle.getAttribute("name");
+				String value = propertyEle.getAttribute("value");
+				if(value != null && value.length() > 0) {
+					beanDefinition.getPropertyValues().addPropertyValue(new PropertyValue(name, value));
+				}else {
+					String ref = propertyEle.getAttribute("ref");
+					if(ref == null || ref.length() == 0) {
+						throw new IllegalArgumentException("Configuration problem :<property> element for property '"+
+					name+"' must specify a ref or value");
+					}
+					BeanReference beanReference = new BeanReference(ref);
+					beanDefinition.getPropertyValues().addPropertyValue(new PropertyValue(name, beanReference));
+				}
+			}
+		}
+	}
+}
+
+
+```
+
+##### 2.BeanFactory
+* 接口，标识一个 **IoC** 容器。通过 **getBean(String)** 方法来 获取一个对象
 
 ```
 package us.codecraft.tinyioc.factory;
