@@ -1,3 +1,6 @@
+
+
+```
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -14,6 +17,9 @@ public interface BeanFactory {
  
  public void registerBeanDefinition(String name,BeanDefinition beanDefinition) throws Exception;
 }
+```
+
+
 
 
 
