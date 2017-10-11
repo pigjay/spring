@@ -17,8 +17,10 @@ import us.codecraft.tinyioc.BeanDefinition;
  */
 public interface BeanFactory {
  
+ //获取bean的方法
  public Object getBean(String name)throws Exception;
  
+ //注册bean的方法
  public void registerBeanDefinition(String name,BeanDefinition beanDefinition) throws Exception;
 }
 ```
