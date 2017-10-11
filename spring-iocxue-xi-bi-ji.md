@@ -347,8 +347,62 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 
 ```
 
+* **AutowireCapableBeanFactory** 可以实现自动装配的 **BeanFactory**。在这个工厂中，实现了 **doCreateBean** 方法，该方法分三步：1，通过 **BeanDefinition** 中保存的类信息实例化一个对象；2，把对象保存在 **BeanDefinition** 中，以备下次获取；3，为其装配属性。装配属性时，通过 **BeanDefinition** 中维护的 **PropertyValues** 集合类，把 **String - Value** 键值对注入到 Bean 的属性中去。如果 **Value** 的类型是 **BeanReference** 则说明其是一个引用（对应于 **XML** 中的 **ref**），通过 **getBean** 对其进行获取，然后注入到属性中。
+
+```
+
+package us.codecraft.tinyioc.factory;
+
+import java.lang.reflect.Field;
+
+import us.codecraft.tinyioc.BeanDefinition;
+import us.codecraft.tinyioc.BeanReference;
+import us.codecraft.tinyioc.PropertyValue;
+/**
+ * 可自动转配内容的BeanFactory
+ * @author zhujie
+ *
+ */
+public class AutowireCapableBeanFactory extends AbstractBeanFactory{
+
+	@Override
+	protected Object doCreateBean(BeanDefinition beanDefinition)throws Exception {
+			
+		    //实例化bean
+		    Object bean = beanDefinition.getBeanClass().newInstance();
+		    //将bean保存在beanDefinition中
+			beanDefinition.setBean(bean);
+			//为bean装配属性
+			applyPropertyValues(bean, beanDefinition);
+		    return bean;
+	}
+	
+	protected Object createBeanInstance(BeanDefinition beanDefinition)throws Exception{
+		return beanDefinition.getBeanClass().newInstance();
+	}
+	
+	/**
+	 * 装配属性
+	 * @param bean
+	 * @param mbd
+	 * @throws Exception
+	 */
+	protected void applyPropertyValues(Object bean,BeanDefinition mbd)throws Exception{
+	    for(PropertyValue propertyValue : mbd.getPropertyValues().getPropertyValueList()) {
+	    	Field declaredField = bean.getClass().getDeclaredField(propertyValue.getName());
+	    	declaredField.setAccessible(true);
+	    	Object value = propertyValue.getValue();
+	    	if(value instanceof BeanReference) {
+	    		BeanReference beanReference = (BeanReference) value;
+	    		value = getBean(beanReference.getName());
+	    	}
+	    	declaredField.set(bean, value);
+	    }
+	}
+}
 
 
+```
 
 
 
