@@ -7,12 +7,19 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import us.codecraft.tinyioc.BeanDefinition;
-
+/**
+ * BeanFactory 的一种抽象类实现，规范了 IoC 容器的基本结构，但是把生成 Bean 的具体实现方式留给子类实现
+ * @author zhujie
+ *
+ */
 public abstract class AbstractBeanFactory implements BeanFactory{
 
+	//存放BeanDefinition信息
 	private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
 
+	//存放BeanDefinition的名称
 	private final List<String> beanDefinitionNames = new ArrayList<String>();
+	
 	
 	@Override
 	public Object getBean(String name) throws Exception {

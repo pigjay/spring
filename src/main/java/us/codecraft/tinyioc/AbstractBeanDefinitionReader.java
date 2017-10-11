@@ -12,8 +12,10 @@ import us.codecraft.tinyioc.io.ResourceLoader;
  */
 public abstract class AbstractBeanDefinitionReader implements BeanDefinitionReader{
 
+    //存放beanDefinition的键值对
 	private Map<String,BeanDefinition> registry;
 	
+	//资源加载器
 	private ResourceLoader resourceLoader;
 	
 	protected AbstractBeanDefinitionReader(ResourceLoader resourceLoader) {

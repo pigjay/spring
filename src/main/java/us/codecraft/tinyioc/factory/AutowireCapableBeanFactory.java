@@ -14,8 +14,12 @@ public class AutowireCapableBeanFactory extends AbstractBeanFactory{
 
 	@Override
 	protected Object doCreateBean(BeanDefinition beanDefinition)throws Exception {
-			Object bean = beanDefinition.getBeanClass().newInstance();
+			
+		    //实例化bean
+		    Object bean = beanDefinition.getBeanClass().newInstance();
+		    //将bean保存在beanDefinition中
 			beanDefinition.setBean(bean);
+			//为bean装配属性
 			applyPropertyValues(bean, beanDefinition);
 		    return bean;
 	}
@@ -24,6 +28,12 @@ public class AutowireCapableBeanFactory extends AbstractBeanFactory{
 		return beanDefinition.getBeanClass().newInstance();
 	}
 	
+	/**
+	 * 装配属性
+	 * @param bean
+	 * @param mbd
+	 * @throws Exception
+	 */
 	protected void applyPropertyValues(Object bean,BeanDefinition mbd)throws Exception{
 	    for(PropertyValue propertyValue : mbd.getPropertyValues().getPropertyValueList()) {
 	    	Field declaredField = bean.getClass().getDeclaredField(propertyValue.getName());
@@ -36,6 +46,4 @@ public class AutowireCapableBeanFactory extends AbstractBeanFactory{
 	    	declaredField.set(bean, value);
 	    }
 	}
-	
-
 }

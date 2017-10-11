@@ -17,31 +17,48 @@ import us.codecraft.tinyioc.BeanReference;
 import us.codecraft.tinyioc.PropertyValue;
 import us.codecraft.tinyioc.io.ResourceLoader;
 /**
- * 
+ * 用于从xml文件中读取配置信息的类
  * @author zhujie
  *
  */
 public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 
+	//初始化 资源加载器
 	public XmlBeanDefinitionReader(ResourceLoader resourceLoader) {
 		super(resourceLoader);
 	}
 
+	//读取xml配置文件信息
 	@Override
 	public void loadBeanDefinitions(String location) throws Exception {
+		//获取资源输入流
 		InputStream inputStream = getResourceLoader().getResource(location).getInputStream();
+		//读取配置信息
 		doLoadBeanDefinitions(inputStream);
 	}
 	
+	/**
+	 * 读取配置信息
+	 * @param inputStream
+	 * @throws Exception
+	 */
 	protected void doLoadBeanDefinitions(InputStream inputStream)throws Exception{
+		//初始化DocumentBuilderFactory
 		DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+		//获取DocumentBuilder
 		DocumentBuilder docBuilder = factory.newDocumentBuilder();
+		//从输入流创建Document
 		Document doc = docBuilder.parse(inputStream);
 		//解析bean
 		registerBeanDefinitions(doc);
+		//关闭输入流
 		inputStream.close();
 	}
 	
+	/**
+	 * 根据Document注册BeanDefinition
+	 * @param doc
+	 */
 	public void registerBeanDefinitions(Document doc) {
 		Element root = doc.getDocumentElement();
 		
@@ -49,6 +66,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 		
 	}
 
+	/**
+	 * 解析Document
+	 * @param root
+	 */
 	protected void parseBeanDefinitions(Element root) {
 		NodeList nl = root.getChildNodes();
 		for(int i = 0; i < nl.getLength(); i++) {
@@ -60,6 +81,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 		}
 	}
 	
+	/**
+	 * 生成BeanDefinition
+	 * @param ele
+	 */
 	protected void processBeanDefinition(Element ele) {
 		String name = ele.getAttribute("name");
 		String className = ele.getAttribute("class");
@@ -69,6 +94,11 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 		getRegistry().put(name, beanDefinition);
 	}
 	
+	/**
+	 * 读取bean属性
+	 * @param ele
+	 * @param beanDefinition
+	 */
 	private void processProperty(Element ele,BeanDefinition beanDefinition) {
 		NodeList propertyNode = ele.getElementsByTagName("property");
 		for(int i = 0; i < propertyNode.getLength(); i++) {
