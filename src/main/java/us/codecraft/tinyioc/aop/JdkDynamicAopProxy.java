@@ -6,12 +6,10 @@ import java.lang.reflect.Proxy;
 
 import org.aopalliance.intercept.MethodInterceptor;
 
-public class JdkDynamicAopProxy implements AopProxy,InvocationHandler{
+public class JdkDynamicAopProxy extends AbstractAopProxy implements InvocationHandler{
 
-	private AdviseSupport advised;
-	
-	public  JdkDynamicAopProxy(AdviseSupport advised) {
-		this.advised = advised;
+	public  JdkDynamicAopProxy(AdvisedSupport advised) {
+		super(advised);
 	}
 	
 	@Override
@@ -27,7 +25,7 @@ public class JdkDynamicAopProxy implements AopProxy,InvocationHandler{
 
 	@Override
 	public Object getProxy() {
-		return Proxy.newProxyInstance(getClass().getClassLoader(), advised.getTargetSource().getTargetClass(), this);
+		return Proxy.newProxyInstance(getClass().getClassLoader(), advised.getTargetSource().getInterfaces(), this);
 	}
 
 }

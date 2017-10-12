@@ -7,24 +7,24 @@ import org.aopalliance.intercept.MethodInvocation;
 
 public class ReflectiveMethodInvocation implements MethodInvocation{
 
-	private Object target;
+	protected Object target;
 	
-	private Method method;
+	protected Method method;
 	
-	private Object[] args;
+	protected Object[] arguments;
 	
 	
 	
-	public ReflectiveMethodInvocation(Object target, Method method, Object[] args) {
+	public ReflectiveMethodInvocation(Object target, Method method, Object[] arguments) {
 		super();
 		this.target = target;
 		this.method = method;
-		this.args = args;
+		this.arguments = arguments;
 	}
 
 	@Override
 	public Object[] getArguments() {
-		return null;
+		return arguments;
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class ReflectiveMethodInvocation implements MethodInvocation{
 
 	@Override
 	public Object proceed() throws Throwable {
-		return method.invoke(target, args);
+		return method.invoke(target, arguments);
 	}
 
 	@Override

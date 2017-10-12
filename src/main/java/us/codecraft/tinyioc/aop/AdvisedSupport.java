@@ -5,7 +5,7 @@ import org.aopalliance.intercept.MethodInterceptor;
  * @author zhujie
  *
  */
-public class AdviseSupport {
+public class AdvisedSupport {
 
 	private TargetSource targetSource;
 	

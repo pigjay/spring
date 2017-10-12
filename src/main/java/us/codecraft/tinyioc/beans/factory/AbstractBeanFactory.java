@@ -34,6 +34,7 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		if(bean == null) {
 			bean = doCreateBean(beanDefinition);
 			bean = initializeBean(bean, name);
+			beanDefinition.setBean(bean);
 		}
 		return bean;
 	}
@@ -63,8 +64,7 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 	public void preInstantiateSingletons()throws Exception{
 		for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
 			String beanName = (String) it.next();
-			BeanDefinition beanDefinition = this.beanDefinitionMap.get(beanName);
-			beanDefinition.setBean(getBean(beanName));
+           getBean(beanName);
 		}
 	}
 	
