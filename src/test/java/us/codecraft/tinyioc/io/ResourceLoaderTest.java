@@ -7,6 +7,9 @@ import java.io.InputStream;
 
 import org.junit.Test;
 
+import us.codecraft.tinyioc.beans.io.Resource;
+import us.codecraft.tinyioc.beans.io.ResourceLoader;
+
 public class ResourceLoaderTest {
 
 	@Test

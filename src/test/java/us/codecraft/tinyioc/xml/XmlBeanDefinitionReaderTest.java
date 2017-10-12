@@ -6,8 +6,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import us.codecraft.tinyioc.BeanDefinition;
-import us.codecraft.tinyioc.io.ResourceLoader;
+import us.codecraft.tinyioc.beans.BeanDefinition;
+import us.codecraft.tinyioc.beans.io.ResourceLoader;
+import us.codecraft.tinyioc.beans.xml.XmlBeanDefinitionReader;
 
 public class XmlBeanDefinitionReaderTest {
 
