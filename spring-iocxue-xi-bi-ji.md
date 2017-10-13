@@ -4,6 +4,8 @@
 
 ##### 1.BeanDefinitioin
 
+* UML类图
+  ![](/assets/BeanDefinition-BeanDefinitionReader.png)
 * 以 **BeanDefinition** 类为核心发散出的几个类，都是用于解决 **Bean** 的具体定义问题，包括 **Bean** 的名字是什么、它的类型是什么，它的属性赋予了哪些值或者引用，也就是 如何在 **IoC** 容器中定义一个 **Bean**，使得 **IoC** 容器可以根据这个定义来生成实例 的问题。
 
 ```
@@ -246,7 +248,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 ##### 2.BeanFactory
 
 * UML类图  
-![](/assets/BeanFactory-Conext-UML .png)
+  ![](/assets/BeanFactory-Conext-UML .png)
 
 * 接口，标识一个 **IoC** 容器。通过 **getBean\(String\)** 方法来 获取一个对象
 
@@ -276,7 +278,8 @@ public interface BeanFactory {
 * **AbstractBeanFactory BeanFactory** 的一种抽象类实现，规范了 **IoC** 容器的基本结构，但是把生成 **Bean** 的具体实现方式留给子类实现。**IoC** 容器的结构：**AbstractBeanFactory** 维护一个 **beanDefinitionMap** 哈希表用于保存类的定义信息**（BeanDefinition）**。获取 **Bean** 时，如果 **Bean** 已经存在于容器中，则返回之，否则则调用 **doCreateBean** 方法装配一个 **Bean**。（所谓存在于容器中，是指容器可以通过 **beanDefinitionMap** 获取 **BeanDefinition** 进而通过其 **getBean\(\)** 方法获取 **Bean**。）
 
 ```
-package us.codecraft.tinyioc.factory;
+
+package us.codecraft.tinyioc.beans.factory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -284,7 +287,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import us.codecraft.tinyioc.BeanDefinition;
+import us.codecraft.tinyioc.beans.BeanDefinition;
+import us.codecraft.tinyioc.beans.BeanPostProcessor;
 /**
  * BeanFactory 的一种抽象类实现，规范了 IoC 容器的基本结构，但是把生成 Bean 的具体实现方式留给子类实现
  * @author zhujie
@@ -292,47 +296,130 @@ import us.codecraft.tinyioc.BeanDefinition;
  */
 public abstract class AbstractBeanFactory implements BeanFactory{
 
-    //存放BeanDefinition信息
-    private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
+	
+	/**
+	 * 存放BeanDefinition信息
+	 */
+	private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
 
-    //存放BeanDefinition的名称
-    private final List<String> beanDefinitionNames = new ArrayList<String>();
+	/**
+	 * 存放BeanDefinition的名称
+	 */
+	private final List<String> beanDefinitionNames = new ArrayList<String>();
+	
+	private List<BeanPostProcessor>  beanPostProcessors = new ArrayList<BeanPostProcessor>();
+	
+	
+	@Override
+	public Object getBean(String name) throws Exception {
+		BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+		if(beanDefinition == null) {
+			throw new IllegalArgumentException("No bean named "+name+" is defined");
+		}
+		Object bean = beanDefinition.getBean();
+		if(bean == null) {
+			bean = doCreateBean(beanDefinition);
+			bean = initializeBean(bean, name);
+			beanDefinition.setBean(bean);
+		}
+		return bean;
+	}
 
+	/**
+	 * 初始化Bean
+	 * 从BeanPostProcessor列表中,依次取出BeanPostProcessor 
+	 * 执行bean = postProcessBeforeInitialization(bean,beanName)。
+	 * 从 BeanPostProcessor 列表中， 依次取出 BeanPostProcessor 
+	 * 执行其 bean = postProcessAfterInitialization(bean,beanName)。
+	 * @param bean
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object initializeBean(Object bean,String name)throws Exception{
+		for(BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+			bean = beanPostProcessor.postProcessorBeforeInitialization(bean, name);
+		}
+		
+		// TODO:call initialize method
+		for(BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+			bean = beanPostProcessor.postProcessorAfterInitialization(bean, name);
+		}
+		return bean;
+	}
+	
+	/**
+	 * 生成一个新的实例
+	 * @param beanDefinition
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object createBeanInstance(BeanDefinition beanDefinition)throws Exception{
+		return beanDefinition.getBeanClass().newInstance();
+	}
+	
+	public void registerBeanDefinition(String name, BeanDefinition beanDefinition)throws Exception {
+    
+		beanDefinitionMap.put(name, beanDefinition);
+		beanDefinitionNames.add(name);
+	}
 
-    @Override
-    public Object getBean(String name) throws Exception {
-        BeanDefinition beanDefinition = beanDefinitionMap.get(name);
-        if(beanDefinition == null) {
-            throw new IllegalArgumentException("No bean named "+name+" is defined");
-        }
-        Object bean = beanDefinition.getBean();
-        if(bean == null) {
-            bean = doCreateBean(beanDefinition);
-        }
-        return bean;
-    }
-
-    @Override
-    public void registerBeanDefinition(String name, BeanDefinition beanDefinition)throws Exception {
-
-        beanDefinitionMap.put(name, beanDefinition);
-        beanDefinitionNames.add(name);
-    }
-
-    public void preInstantiateSingletons()throws Exception{
-        for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
-            String beanName = (String) it.next();
-            getBean(beanName);
-        }
-    }
-
+	public void preInstantiateSingletons()throws Exception{
+		for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
+			String beanName = (String) it.next();
+           getBean(beanName);
+		}
+	}
+	
     /**
-     * 初始化bean
+     * 实例化Bean
      * @param beanDefinition
      * @return
+     * @throws Exception
      */
-    protected abstract Object doCreateBean(BeanDefinition beanDefinition) throws Exception;
+	protected  Object doCreateBean(BeanDefinition beanDefinition) throws Exception{
+		Object bean = createBeanInstance(beanDefinition);
+		beanDefinition.setBean(bean);
+		applyPropertyValues(bean, beanDefinition);
+		return bean;
+	}
+	
+	/**
+	 * 注入属性，包括依赖注入的过程，在依赖注入的过程中，
+	 * 如果Bean实现了BeanFactoryAware接口,
+	 * 则将容器的引用传入到Bean中去,
+	 * 这样，Bean 将获取对容器操作的权限，
+	 * 也就允许了 编写扩展 IoC 容器的功能的 Bean。
+	 * @param bean
+	 * @param beanDefinition
+	 * @throws Exception
+	 */
+	protected void applyPropertyValues(Object bean, BeanDefinition beanDefinition) throws Exception{
+		
+	}
+
+	public void addPostProcessor(BeanPostProcessor beanPostProcessor) throws Exception{
+		this.beanPostProcessors.add(beanPostProcessor);
+	}
+	
+	/**
+	 * 根据Class类型获取Bean集合
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public List getBeansForType(Class type)throws Exception{
+		List beans = new ArrayList<Object>();
+		for(String beanDefinitionName : beanDefinitionNames) {
+			if(type.isAssignableFrom(beanDefinitionMap.get(beanDefinitionName).getBeanClass())) {
+				beans.add(getBean(beanDefinitionName));
+			}
+		}
+		return beans;
+	}
 }
+
+
 ```
 
 * **AutowireCapableBeanFactory** 可以实现自动装配的 **BeanFactory**。在这个工厂中，实现了 **doCreateBean** 方法，该方法分三步：1，通过 **BeanDefinition** 中保存的类信息实例化一个对象；2，把对象保存在 **BeanDefinition** 中，以备下次获取；3，为其装配属性。装配属性时，通过 **BeanDefinition** 中维护的 **PropertyValues** 集合类，把 **String - Value** 键值对注入到 Bean 的属性中去。如果 **Value** 的类型是 **BeanReference** 则说明其是一个引用（对应于 **XML** 中的 **ref**），通过 **getBean** 对其进行获取，然后注入到属性中。
@@ -389,5 +476,170 @@ public class AutowireCapableBeanFactory extends AbstractBeanFactory{
 }
 ```
 
+### 2.AOP的实现
 
+##### 1.context
+
+* 以 **ApplicationContext** 接口为核心发散出的几个类，主要是对前面 **Resouce** 、 **BeanFactory**、**BeanDefinition** 进行了功能的封装，解决 根据地址获取 IoC 容器并使用 的问题。
+
+```
+
+package us.codecraft.tinyioc.context;
+
+import us.codecraft.tinyioc.beans.factory.BeanFactory;
+
+/**
+ * 标记接口，继承了 BeanFactory。
+ * 通常，要实现一个 IoC 容器时，
+ * 需要先通过 ResourceLoader 获取一个 Resource，
+ * 其中包括了容器的配置、Bean 的定义信息。接着，
+ * 使用 BeanDefinitionReader 读取该 Resource 中的 BeanDefinition 信息。
+ * 最后，把 BeanDefinition 保存在 BeanFactory 中，
+ * 容器配置完毕可以使用。
+ * 注意到 BeanFactory 只实现了 Bean 的 装配、获取，
+ * 并未说明 Bean 的 来源 也就是 BeanDefinition 是如何 加载 的。
+ * 该接口把 BeanFactory 和 BeanDefinitionReader 结合在了一起。
+ * @author zhujie
+ *
+ */
+public interface ApplicationContext extends BeanFactory{
+
+}
+
+```
+* **ApplicationContext** 的抽象实现，内部包含一个 **BeanFactory** 类。主要方法有 **getBean()** 和 **refresh()** 方法。**getBean()** 直接调用了内置 **BeanFactory** 的 **getBean()** 方法，**refresh()** 则用于实现 **BeanFactory** 的刷新，也就是告诉 **BeanFactory** 该使用哪个资源（**Resource**）加载类定义（**BeanDefinition**）信息，该方法留给子类实现，用以实现 从不同来源的不同类型的资源加载类定义 的效果。
+
+```
+
+package us.codecraft.tinyioc.context;
+import java.util.List;
+
+import us.codecraft.tinyioc.beans.BeanPostProcessor;
+import us.codecraft.tinyioc.beans.factory.AbstractBeanFactory;
+/**
+ * ApplicationContext 的抽象实现，
+ * 内部包含一个 BeanFactory 类。
+ * 主要方法有 getBean() 和 refresh() 方法。
+ * getBean() 直接调用了内置 BeanFactory 的 getBean() 方法，
+ * refresh() 则用于实现 BeanFactory 的刷新，
+ * 也就是告诉 BeanFactory 该使用哪个资源（Resource）
+ * 加载类定义（BeanDefinition）信息，
+ * 该方法留给子类实现，用以实现 从不同来源的不同类型的资源加载类定义 的效果。
+ * @author zhujie
+ *
+ */
+public abstract class AbstractApplicationContext implements ApplicationContext{
+
+	protected AbstractBeanFactory beanFactory;
+	
+	public AbstractApplicationContext(AbstractBeanFactory beanFactory) {
+		this.beanFactory = beanFactory;
+	}
+	/**
+	 * 则用于实现 BeanFactory 的刷新，
+	 * 也就是告诉 BeanFactory 该使用哪个资源（Resource）
+	 * 加载类定义（BeanDefinition）信息，该中的loadBeanDefinitions
+	 * 方法留给子类实现，用以实现 从不同来源的不同类型的资源加载类定义 的效果。
+	 * @throws Exception
+	 */
+	public void refresh() throws Exception{
+		loadBeanDefinitions(beanFactory);
+		registerBeanPostProcessors(beanFactory);
+		onRefresh();
+	}
+
+	/**
+	 * 不同子类实现从不同的路径加载类资源
+	 * @param beanFactory
+	 * @throws Exception
+	 */
+	protected abstract void loadBeanDefinitions(AbstractBeanFactory beanFactory)throws Exception;
+	
+	/**
+	 * 将加载的BeanPostProcessor的类资源放入
+	 * BeanFactory的beanPostProcessors中
+	 * @param beanFactory
+	 * @throws Exception
+	 */
+	protected void registerBeanPostProcessors(AbstractBeanFactory beanFactory)throws Exception{
+		List beanPostProcessors = beanFactory.getBeansForType(BeanPostProcessor.class);
+		for(Object beanPostProcessor : beanPostProcessors) {
+			beanFactory.addPostProcessor((BeanPostProcessor)beanPostProcessor);
+		}
+	}
+	
+	/**
+	 * 刷新beanFactory实现单例模式
+	 * @throws Exception
+	 */
+	protected void onRefresh()throws Exception{
+		beanFactory.preInstantiateSingletons();
+	}
+	
+	@Override
+	public Object getBean(String name) throws Exception {
+		return beanFactory.getBean(name);
+	}
+	
+	
+}
+
+
+```
+
+*  从类路径加载资源的具体实现类。内部通过 **XmlBeanDefinitionReader** 解析 **UrlResourceLoader** 读取到的 **Resource**，获取 **BeanDefinition** 信息，然后将其保存到内置的 **BeanFactory** 中。
+
+```
+
+package us.codecraft.tinyioc.context;
+
+import java.util.Map;
+
+import us.codecraft.tinyioc.beans.BeanDefinition;
+import us.codecraft.tinyioc.beans.factory.AbstractBeanFactory;
+import us.codecraft.tinyioc.beans.factory.AutowireCapableBeanFactory;
+import us.codecraft.tinyioc.beans.io.ResourceLoader;
+import us.codecraft.tinyioc.beans.xml.XmlBeanDefinitionReader;
+/**
+ * 从类路径加载资源的具体实现类。
+ * 内部通过 XmlBeanDefinitionReader 
+ * 解析 UrlResourceLoader 
+ * 读取到的 Resource，
+ * 获取 BeanDefinition 信息，
+ * 然后将其保存到内置的 BeanFactory 中。
+ * @author zhujie
+ *
+ */
+public class ClassPathXmlApplicationContext extends AbstractApplicationContext{
+
+	/**
+	 * xml资源路径
+	 */
+	private String configLocation;
+	
+	public ClassPathXmlApplicationContext(String configLocation) throws Exception {
+		this(configLocation,new AutowireCapableBeanFactory());
+	}
+	
+	public ClassPathXmlApplicationContext(String configLocation,AbstractBeanFactory beanFactory) throws Exception {
+		super(beanFactory);
+		this.configLocation  = configLocation;
+		refresh();
+	}
+
+	@Override
+	protected void loadBeanDefinitions(AbstractBeanFactory beanFactory) throws Exception{
+		XmlBeanDefinitionReader xmlBeanDefinitionReader = new XmlBeanDefinitionReader(new ResourceLoader());
+	    xmlBeanDefinitionReader.loadBeanDefinitions(configLocation);
+	    for(Map.Entry<String, BeanDefinition> beanDefinitionEntry : xmlBeanDefinitionReader.getRegistry().entrySet()) {
+	    	beanFactory.registerBeanDefinition(beanDefinitionEntry.getKey(), beanDefinitionEntry.getValue());
+	    }
+	}
+
+		
+
+}
+
+
+```
 
