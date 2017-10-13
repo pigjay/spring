@@ -253,26 +253,32 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 * 接口，标识一个 **IoC** 容器。通过 **getBean\(String\)** 方法来 获取一个对象
 
 ```
-package us.codecraft.tinyioc.factory;
+package us.codecraft.tinyioc.beans.factory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import us.codecraft.tinyioc.BeanDefinition;
+import us.codecraft.tinyioc.beans.BeanDefinition;
 
 /**
- * bean的工厂接口,标识一个 IoC 容器。通过 getBean(String) 方法来 获取一个对象
+ * bean的容器
  * @author zhujie
  *
  */
 public interface BeanFactory {
-
- //获取bean的方法
- public Object getBean(String name)throws Exception;
-
- //注册bean的方法
- public void registerBeanDefinition(String name,BeanDefinition beanDefinition) throws Exception;
+ 
+	/**
+	 * 从工厂中取出所需的Bean
+	 * 在AbstractBeanFactory中
+	 * 规定了基本的构造和执行流程:生成bean，在进行一些初始化操作
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	public Object getBean(String name)throws Exception;
+ 
 }
+
 ```
 
 * **AbstractBeanFactory BeanFactory** 的一种抽象类实现，规范了 **IoC** 容器的基本结构，但是把生成 **Bean** 的具体实现方式留给子类实现。**IoC** 容器的结构：**AbstractBeanFactory** 维护一个 **beanDefinitionMap** 哈希表用于保存类的定义信息**（BeanDefinition）**。获取 **Bean** 时，如果 **Bean** 已经存在于容器中，则返回之，否则则调用 **doCreateBean** 方法装配一个 **Bean**。（所谓存在于容器中，是指容器可以通过 **beanDefinitionMap** 获取 **BeanDefinition** 进而通过其 **getBean\(\)** 方法获取 **Bean**。）
