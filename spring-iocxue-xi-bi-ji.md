@@ -278,7 +278,8 @@ public interface BeanFactory {
 * **AbstractBeanFactory BeanFactory** 的一种抽象类实现，规范了 **IoC** 容器的基本结构，但是把生成 **Bean** 的具体实现方式留给子类实现。**IoC** 容器的结构：**AbstractBeanFactory** 维护一个 **beanDefinitionMap** 哈希表用于保存类的定义信息**（BeanDefinition）**。获取 **Bean** 时，如果 **Bean** 已经存在于容器中，则返回之，否则则调用 **doCreateBean** 方法装配一个 **Bean**。（所谓存在于容器中，是指容器可以通过 **beanDefinitionMap** 获取 **BeanDefinition** 进而通过其 **getBean\(\)** 方法获取 **Bean**。）
 
 ```
-package us.codecraft.tinyioc.factory;
+
+package us.codecraft.tinyioc.beans.factory;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -286,7 +287,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import us.codecraft.tinyioc.BeanDefinition;
+import us.codecraft.tinyioc.beans.BeanDefinition;
+import us.codecraft.tinyioc.beans.BeanPostProcessor;
 /**
  * BeanFactory 的一种抽象类实现，规范了 IoC 容器的基本结构，但是把生成 Bean 的具体实现方式留给子类实现
  * @author zhujie
@@ -294,47 +296,130 @@ import us.codecraft.tinyioc.BeanDefinition;
  */
 public abstract class AbstractBeanFactory implements BeanFactory{
 
-    //存放BeanDefinition信息
-    private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
+	
+	/**
+	 * 存放BeanDefinition信息
+	 */
+	private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
 
-    //存放BeanDefinition的名称
-    private final List<String> beanDefinitionNames = new ArrayList<String>();
+	/**
+	 * 存放BeanDefinition的名称
+	 */
+	private final List<String> beanDefinitionNames = new ArrayList<String>();
+	
+	private List<BeanPostProcessor>  beanPostProcessors = new ArrayList<BeanPostProcessor>();
+	
+	
+	@Override
+	public Object getBean(String name) throws Exception {
+		BeanDefinition beanDefinition = beanDefinitionMap.get(name);
+		if(beanDefinition == null) {
+			throw new IllegalArgumentException("No bean named "+name+" is defined");
+		}
+		Object bean = beanDefinition.getBean();
+		if(bean == null) {
+			bean = doCreateBean(beanDefinition);
+			bean = initializeBean(bean, name);
+			beanDefinition.setBean(bean);
+		}
+		return bean;
+	}
 
+	/**
+	 * 初始化Bean
+	 * 从BeanPostProcessor列表中,依次取出BeanPostProcessor 
+	 * 执行bean = postProcessBeforeInitialization(bean,beanName)。
+	 * 从 BeanPostProcessor 列表中， 依次取出 BeanPostProcessor 
+	 * 执行其 bean = postProcessAfterInitialization(bean,beanName)。
+	 * @param bean
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object initializeBean(Object bean,String name)throws Exception{
+		for(BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+			bean = beanPostProcessor.postProcessorBeforeInitialization(bean, name);
+		}
+		
+		// TODO:call initialize method
+		for(BeanPostProcessor beanPostProcessor : beanPostProcessors) {
+			bean = beanPostProcessor.postProcessorAfterInitialization(bean, name);
+		}
+		return bean;
+	}
+	
+	/**
+	 * 生成一个新的实例
+	 * @param beanDefinition
+	 * @return
+	 * @throws Exception
+	 */
+	protected Object createBeanInstance(BeanDefinition beanDefinition)throws Exception{
+		return beanDefinition.getBeanClass().newInstance();
+	}
+	
+	public void registerBeanDefinition(String name, BeanDefinition beanDefinition)throws Exception {
+    
+		beanDefinitionMap.put(name, beanDefinition);
+		beanDefinitionNames.add(name);
+	}
 
-    @Override
-    public Object getBean(String name) throws Exception {
-        BeanDefinition beanDefinition = beanDefinitionMap.get(name);
-        if(beanDefinition == null) {
-            throw new IllegalArgumentException("No bean named "+name+" is defined");
-        }
-        Object bean = beanDefinition.getBean();
-        if(bean == null) {
-            bean = doCreateBean(beanDefinition);
-        }
-        return bean;
-    }
-
-    @Override
-    public void registerBeanDefinition(String name, BeanDefinition beanDefinition)throws Exception {
-
-        beanDefinitionMap.put(name, beanDefinition);
-        beanDefinitionNames.add(name);
-    }
-
-    public void preInstantiateSingletons()throws Exception{
-        for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
-            String beanName = (String) it.next();
-            getBean(beanName);
-        }
-    }
-
+	public void preInstantiateSingletons()throws Exception{
+		for(Iterator it = this.beanDefinitionNames.iterator();it.hasNext();) {
+			String beanName = (String) it.next();
+           getBean(beanName);
+		}
+	}
+	
     /**
-     * 初始化bean
+     * 实例化Bean
      * @param beanDefinition
      * @return
+     * @throws Exception
      */
-    protected abstract Object doCreateBean(BeanDefinition beanDefinition) throws Exception;
+	protected  Object doCreateBean(BeanDefinition beanDefinition) throws Exception{
+		Object bean = createBeanInstance(beanDefinition);
+		beanDefinition.setBean(bean);
+		applyPropertyValues(bean, beanDefinition);
+		return bean;
+	}
+	
+	/**
+	 * 注入属性，包括依赖注入的过程，在依赖注入的过程中，
+	 * 如果Bean实现了BeanFactoryAware接口,
+	 * 则将容器的引用传入到Bean中去,
+	 * 这样，Bean 将获取对容器操作的权限，
+	 * 也就允许了 编写扩展 IoC 容器的功能的 Bean。
+	 * @param bean
+	 * @param beanDefinition
+	 * @throws Exception
+	 */
+	protected void applyPropertyValues(Object bean, BeanDefinition beanDefinition) throws Exception{
+		
+	}
+
+	public void addPostProcessor(BeanPostProcessor beanPostProcessor) throws Exception{
+		this.beanPostProcessors.add(beanPostProcessor);
+	}
+	
+	/**
+	 * 根据Class类型获取Bean集合
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
+	public List getBeansForType(Class type)throws Exception{
+		List beans = new ArrayList<Object>();
+		for(String beanDefinitionName : beanDefinitionNames) {
+			if(type.isAssignableFrom(beanDefinitionMap.get(beanDefinitionName).getBeanClass())) {
+				beans.add(getBean(beanDefinitionName));
+			}
+		}
+		return beans;
+	}
 }
+
+
 ```
 
 * **AutowireCapableBeanFactory** 可以实现自动装配的 **BeanFactory**。在这个工厂中，实现了 **doCreateBean** 方法，该方法分三步：1，通过 **BeanDefinition** 中保存的类信息实例化一个对象；2，把对象保存在 **BeanDefinition** 中，以备下次获取；3，为其装配属性。装配属性时，通过 **BeanDefinition** 中维护的 **PropertyValues** 集合类，把 **String - Value** 键值对注入到 Bean 的属性中去。如果 **Value** 的类型是 **BeanReference** 则说明其是一个引用（对应于 **XML** 中的 **ref**），通过 **getBean** 对其进行获取，然后注入到属性中。
