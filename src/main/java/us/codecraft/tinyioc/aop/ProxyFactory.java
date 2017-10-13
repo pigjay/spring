@@ -1,5 +1,9 @@
 package us.codecraft.tinyioc.aop;
-
+/**
+ * 代理类工厂类
+ * @author zhujie
+ *
+ */
 public class ProxyFactory extends AdvisedSupport implements AopProxy{
 
 	@Override

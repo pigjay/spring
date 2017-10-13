@@ -82,7 +82,6 @@ public class AspectJExpressionPointcut implements Pointcut,ClassFilter,MethodMat
 
 	@Override
 	public ClassFilter getClassFilter() {
-		// TODO Auto-generated method stub
 		return this;
 	}
 

@@ -5,7 +5,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import org.aopalliance.intercept.MethodInterceptor;
-
+/**
+ * JDK代理类
+ * @author zhujie
+ *
+ */
 public class JdkDynamicAopProxy extends AbstractAopProxy implements InvocationHandler{
 
 	public  JdkDynamicAopProxy(AdvisedSupport advised) {

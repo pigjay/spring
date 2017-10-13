@@ -7,7 +7,11 @@ import org.aopalliance.intercept.MethodInvocation;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
-
+/**
+ * CGLib代理类
+ * @author zhujie
+ *
+ */
 public class Cglib2AopProxy extends AbstractAopProxy{
 
 	public Cglib2AopProxy(AdvisedSupport advised) {
