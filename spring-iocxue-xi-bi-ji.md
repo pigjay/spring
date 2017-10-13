@@ -248,7 +248,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 ##### 2.BeanFactory
 
 * UML类图  
-  ![](/assets/BeanFactory-Conext-UML .png)
+  ![](/assets/BeanFactory-Conext-UML.png)
 
 * 接口，标识一个 **IoC** 容器。通过 **getBean\(String\)** 方法来 获取一个对象
 
