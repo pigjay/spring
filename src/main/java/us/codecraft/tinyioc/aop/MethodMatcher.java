@@ -2,7 +2,7 @@ package us.codecraft.tinyioc.aop;
 
 import java.lang.reflect.Method;
 /**
- * 
+ * 方法切点
  * @author zhujie
  *
  */

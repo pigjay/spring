@@ -8,7 +8,11 @@ import org.aspectj.weaver.tools.PointcutExpression;
 import org.aspectj.weaver.tools.PointcutParser;
 import org.aspectj.weaver.tools.PointcutPrimitive;
 import org.aspectj.weaver.tools.ShadowMatch;
-
+/**
+ * AspectJ切点
+ * @author zhujie
+ *
+ */
 public class AspectJExpressionPointcut implements Pointcut,ClassFilter,MethodMatcher {
 
 	

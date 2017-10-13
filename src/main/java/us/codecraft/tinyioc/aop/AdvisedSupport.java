@@ -7,10 +7,19 @@ import org.aopalliance.intercept.MethodInterceptor;
  */
 public class AdvisedSupport {
 
+	/**
+	 * 被代理对象
+	 */
 	private TargetSource targetSource;
 	
+	/**
+	 * AOP在切点处指定的逻辑
+	 */
 	private MethodInterceptor methodInterceptor;
 	
+	/**
+	 * 切点
+	 */
 	private MethodMatcher methodMatcher;
 
 	public TargetSource getTargetSource() {

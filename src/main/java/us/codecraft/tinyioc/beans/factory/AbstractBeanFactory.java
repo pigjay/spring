@@ -15,10 +15,15 @@ import us.codecraft.tinyioc.beans.BeanPostProcessor;
  */
 public abstract class AbstractBeanFactory implements BeanFactory{
 
-	//存放BeanDefinition信息
+	
+	/**
+	 * 存放BeanDefinition信息
+	 */
 	private Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<String, BeanDefinition>();
 
-	//存放BeanDefinition的名称
+	/**
+	 * 存放BeanDefinition的名称
+	 */
 	private final List<String> beanDefinitionNames = new ArrayList<String>();
 	
 	private List<BeanPostProcessor>  beanPostProcessors = new ArrayList<BeanPostProcessor>();
@@ -39,6 +44,17 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		return bean;
 	}
 
+	/**
+	 * 初始化Bean
+	 * 从BeanPostProcessor列表中,依次取出BeanPostProcessor 
+	 * 执行bean = postProcessBeforeInitialization(bean,beanName)。
+	 * 从 BeanPostProcessor 列表中， 依次取出 BeanPostProcessor 
+	 * 执行其 bean = postProcessAfterInitialization(bean,beanName)。
+	 * @param bean
+	 * @param name
+	 * @return
+	 * @throws Exception
+	 */
 	protected Object initializeBean(Object bean,String name)throws Exception{
 		for(BeanPostProcessor beanPostProcessor : beanPostProcessors) {
 			bean = beanPostProcessor.postProcessorBeforeInitialization(bean, name);
@@ -51,6 +67,12 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		return bean;
 	}
 	
+	/**
+	 * 生成一个新的实例
+	 * @param beanDefinition
+	 * @return
+	 * @throws Exception
+	 */
 	protected Object createBeanInstance(BeanDefinition beanDefinition)throws Exception{
 		return beanDefinition.getBeanClass().newInstance();
 	}
@@ -68,7 +90,12 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		}
 	}
 	
-
+    /**
+     * 实例化Bean
+     * @param beanDefinition
+     * @return
+     * @throws Exception
+     */
 	protected  Object doCreateBean(BeanDefinition beanDefinition) throws Exception{
 		Object bean = createBeanInstance(beanDefinition);
 		beanDefinition.setBean(bean);
@@ -76,6 +103,16 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		return bean;
 	}
 	
+	/**
+	 * 注入属性，包括依赖注入的过程，在依赖注入的过程中，
+	 * 如果Bean实现了BeanFactoryAware接口,
+	 * 则将容器的引用传入到Bean中去,
+	 * 这样，Bean 将获取对容器操作的权限，
+	 * 也就允许了 编写扩展 IoC 容器的功能的 Bean。
+	 * @param bean
+	 * @param beanDefinition
+	 * @throws Exception
+	 */
 	protected void applyPropertyValues(Object bean, BeanDefinition beanDefinition) throws Exception{
 		
 	}
@@ -84,6 +121,12 @@ public abstract class AbstractBeanFactory implements BeanFactory{
 		this.beanPostProcessors.add(beanPostProcessor);
 	}
 	
+	/**
+	 * 根据Class类型获取Bean集合
+	 * @param type
+	 * @return
+	 * @throws Exception
+	 */
 	public List getBeansForType(Class type)throws Exception{
 		List beans = new ArrayList<Object>();
 		for(String beanDefinitionName : beanDefinitionNames) {

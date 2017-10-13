@@ -1,11 +1,18 @@
 package us.codecraft.tinyioc.aop;
 
 import org.aopalliance.aop.Advice;
-
+/**
+ * AspectJ切点通知器
+ * @author zhujie
+ *
+ */
 public class AspectJExpressionPointcutAdvisor implements PointcutAdvisor{
 
 	private AspectJExpressionPointcut pointcut = new AspectJExpressionPointcut();
 	
+	/**
+	 * 通知对象
+	 */
 	private Advice advice;
 	
 	
