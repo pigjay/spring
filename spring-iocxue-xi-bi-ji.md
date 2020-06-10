@@ -5,7 +5,7 @@
 ##### 1.BeanDefinitioin
 
 * UML类图
-  ![](/assets/BeanDefinition-BeanDefinitionReader.png)
+   ![](/assets/BeanDefinition-BeanDefinitionReader.png)
 * 以 **BeanDefinition** 类为核心发散出的几个类，都是用于解决 **Bean** 的具体定义问题，包括 **Bean** 的名字是什么、它的类型是什么，它的属性赋予了哪些值或者引用，也就是 如何在 **IoC** 容器中定义一个 **Bean**，使得 **IoC** 容器可以根据这个定义来生成实例 的问题。
 
 ```
@@ -247,9 +247,8 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader{
 
 ##### 2.BeanFactory
 
-* UML类图  
-  ![](/assets/BeanFactory-Conext-UML.png)
-
+* UML类图
+  ![](/assets/BeanFactory-Conext-UML .png)
 * 接口，标识一个 **IoC** 容器。通过 **getBean\(String\)** 方法来 获取一个对象
 
 ```
