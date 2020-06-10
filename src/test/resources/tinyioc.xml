@@ -25,9 +25,7 @@
         <property name="expression" value="execution(* us.codecraft.tinyioc.*.*(..))"></property>
     </bean> 
 
-    <bean id="haha" class="us.codecraft.tinyioc.HelloWorldServiceImpl">
-       <property name="text" value="hahaha"></property>
-       <property name="outputService" ref="outputService"></property>
+    <bean id="haha" class="us.codecraft.tinyioc.HelloWorldHandler">
     </bean>
 
 </beans>
